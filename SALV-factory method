@@ -1,0 +1,40 @@
+REPORT Z1085836_SALV.
+
+DATA: gr_table TYPE REF TO cl_salv_table.
+
+TYPES: BEGIN OF ty_spfli,
+  carrid type S_CARR_ID,
+  connid type S_CONN_ID,
+  COUNTRYFR TYPE LAND1,
+  CITYFROM TYPE S_FROM_CIT,
+  END OF ty_spfli.
+
+
+
+ DATA: it_spfli TYPE TABLE OF spfli,
+       gt_spfli TYPE TABLE OF ty_spfli.
+
+
+
+
+ START-OF-SELECTION.
+
+   SELECT carrid connid countryfr cityfrom INTO  CORRESPONDING FIELDS OF TABLE gt_spfli FROM spfli.
+
+
+
+   TRY.
+   CALL METHOD cl_salv_table=>factory
+*     EXPORTING
+*       list_display   = IF_SALV_C_BOOL_SAP=>FALSE
+*       r_container    =
+*       container_name =
+     IMPORTING
+       r_salv_table   = gr_table
+     CHANGING
+       t_table        = gt_spfli
+       .
+    CATCH cx_salv_msg .
+   ENDTRY.
+
+gr_table->display( ).
