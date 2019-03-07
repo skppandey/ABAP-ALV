@@ -1,0 +1,140 @@
+REPORT z1085836_editalv.
+
+DATA: lt_emp      TYPE STANDARD TABLE OF z1125378_emp1,
+      lt_fieldcat TYPE lvc_t_fcat.
+************************************************************************
+*   WORK AREAS
+************************************************************************
+DATA: ls_fieldcat TYPE lvc_s_fcat,
+      ls_emp      TYPE z1125378_emp1,
+      lw_layout   TYPE lvc_s_layo.
+
+************************************************************************
+*   REFERENCE OBJECT
+************************************************************************
+DATA:  r_container TYPE REF TO cl_gui_custom_container,
+       r_grid      TYPE REF TO cl_gui_alv_grid.
+************************************************************************
+*   Field symbol
+************************************************************************
+FIELD-SYMBOLS: <ls_fieldcat>   TYPE lvc_s_fcat.
+************************************************************************
+*   START-OF-SELECTION.
+************************************************************************
+START-OF-SELECTION.
+  SELECT * FROM z1125378_emp1 INTO TABLE lt_emp UP TO 20 ROWS.
+
+* Call screen 200
+  CALL SCREEN 200.
+
+MODULE status_0200 OUTPUT.
+  SET PF-STATUS 'PF-STATUS'.
+  SET TITLEBAR 'TITLE'.
+  CREATE OBJECT r_container
+    EXPORTING
+      container_name = 'CUSTOM_1'.
+  CREATE OBJECT r_grid
+    EXPORTING
+      i_parent = r_container.
+  lw_layout-SEL_MODE = 'X'.
+* create Field Catalog
+  ls_fieldcat-fieldname = 'FNAME'.
+  ls_fieldcat-tabname   = 'Z1125378_EMP1'.
+  ls_fieldcat-seltext   = 'Employee Name'.
+  ls_fieldcat-edit      = 'X'.
+  APPEND ls_fieldcat TO lt_fieldcat.
+  CLEAR ls_fieldcat.
+  ls_fieldcat-fieldname = 'LNAME'.
+  ls_fieldcat-tabname   = 'Z1125378_EMP1'.
+  ls_fieldcat-seltext   = 'Employee Last Name'.
+  ls_fieldcat-edit      = 'X'.
+*ls_fieldcat-hotspot   = 'X'.
+  APPEND ls_fieldcat TO lt_fieldcat.
+  CLEAR ls_fieldcat.
+
+  CALL METHOD r_grid->set_table_for_first_display
+    EXPORTING
+*     I_BUFFER_ACTIVE               =
+*     I_BYPASSING_BUFFER            =
+*     I_CONSISTENCY_CHECK           =
+      i_structure_name              = 'Z1125378_EMP1'
+*     IS_VARIANT                    =
+      i_save                        = 'A'
+      i_default                     = abap_true
+      is_layout                     = lw_layout
+*     IS_PRINT                      =
+*     IT_SPECIAL_GROUPS             =
+*     IT_TOOLBAR_EXCLUDING          =
+*     IT_HYPERLINK                  =
+*     IT_ALV_GRAPHICS               =
+*     IT_EXCEPT_QINFO               =
+*     IR_SALV_ADAPTER               =
+    CHANGING
+      it_outtab                     = lt_emp
+      it_fieldcatalog               = lt_fieldcat
+*     IT_SORT                       =
+*     IT_FILTER                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+  CASE sy-ucomm.
+    WHEN 'BACK' OR 'EXIT' OR 'CANCEL'.
+      LEAVE PROGRAM.
+      LEAVE TO SCREEN 0.
+    WHEN 'SAVE'.
+      DATA: lt_t_row TYPE lvc_t_row,
+            ls_t_row LIKE LINE OF lt_t_row.
+      FIELD-SYMBOLS: <fs_changed_data> LIKE LINE OF lt_emp.
+      CALL METHOD r_grid->check_changed_data.
+      CALL METHOD r_grid->get_selected_rows
+        IMPORTING
+          et_index_rows = lt_t_row.   " Indexes of Selected Rows
+      LOOP AT lt_t_row INTO ls_t_row.
+
+*        IF <fs_changed_data> IS  ASSIGNED.
+*          READ TABLE lt_emp ASSIGNING <fs_changed_data> INDEX ls_t_row-index.
+          READ TABLE lt_emp INTO ls_emp INDEX ls_t_row-index.
+            IF sy-subrc EQ 0.
+*              MOVE-CORRESPONDING ls_t_row TO <fs_changed_data>.
+              APPEND ls_t_row TO lt_t_row.
+              modify lt_emp from ls_emp.
+*            ENDIF.
+*            MODIFY z1125378_emp1 FROM  <fs_changed_data>.
+*            MODIFY z1125378_emp1 FROM ls_emp.
+          ELSE.
+            WRITE:'DATA NOT SAVED'.
+          ENDIF.
+
+*       READ TABLE lt_emp ASSIGNING <fs_changed_data> INDEX ls_t_row-index.
+*        IF sy-subrc = 0.
+*          MODIFY Z1125378_EMP1 FROM  <fs_changed_data>.
+*          ELSE.
+*            WRITE:'DATA NOT SAVED'.
+*        ENDIF.
+      ENDLOOP.
+  ENDCASE.
+  MODIFY z1125378_emp1 FROM TABLE lt_emp.
+ENDMODULE.
+
+*Through the index capturing the values of selected rows
+*LOOP AT i_selected_rows INTO w_selected_rows.
+*  READ TABLE it_tab INTO wa_it_tab INDEX w_selected_rows-index.
+*  IF sy-subrc EQ 0.
+*    MOVE-CORRESPONDING wa_it_tab TO w_modified.
+*    APPEND w_modified TO i_modified.
+*  ENDIF.
+*ENDLOOP.
+*MODIFY mara FROM TABLE i_modified.
