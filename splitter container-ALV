@@ -1,0 +1,84 @@
+REPORT z1085836_ooalv6.
+DATA: obj_cont  TYPE REF TO cl_gui_custom_container,
+      o_split   TYPE REF TO cl_gui_splitter_container,
+      g_parent1 TYPE REF TO cl_gui_container,
+      g_parent2 TYPE REF TO cl_gui_container,
+      obj_grid1 TYPE REF TO cl_gui_alv_grid,
+      obj_grid2 TYPE REF TO cl_gui_alv_grid.
+
+DATA: it_emp1 TYPE TABLE OF zemployee_dts,
+      it_emp2 TYPE TABLE OF z1125378_emp1.
+
+START-OF-SELECTION.
+  SELECT * FROM zemployee_dts INTO TABLE it_emp1.
+  SELECT * FROM z1125378_emp1 INTO TABLE it_emp2.
+
+  CALL SCREEN 200.
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+  SET PF-STATUS 'SCREEN 200'.
+  SET TITLEBAR 'OUTPUT'.
+
+  CREATE OBJECT obj_cont                     "CUSTOM CONTAINER
+    EXPORTING
+      container_name = 'CONT'.
+  CREATE OBJECT o_split
+    EXPORTING
+      parent  = obj_cont
+      rows    = 1
+      columns = 2
+      align   = 15. " (splitter fills the whole custom container)
+
+*  get part of splitter container for 1st table
+  CALL METHOD o_split->get_container
+    EXPORTING
+      row       = 1
+      column    = 1
+    RECEIVING
+      container = g_parent1.
+** get part of splitter container for 2nd table
+  CALL METHOD o_split->get_container
+    EXPORTING
+      row       = 1
+      column    = 2
+    RECEIVING
+      container = g_parent2.
+
+  CREATE OBJECT obj_grid1
+    EXPORTING
+      i_parent = g_parent1.
+
+  CREATE OBJECT obj_grid2
+    EXPORTING
+      i_parent = g_parent2.
+
+  CALL METHOD obj_grid1->set_table_for_first_display
+    EXPORTING
+      i_structure_name = 'ZEMPLOYEE_DTS'
+    CHANGING
+      it_outtab        = it_emp1.
+
+  CALL METHOD obj_grid2->set_table_for_first_display
+    EXPORTING
+      i_structure_name = 'Z1125378_EMP1'
+    CHANGING
+      it_outtab        = it_emp2.
+
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+  CASE sy-ucomm.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
